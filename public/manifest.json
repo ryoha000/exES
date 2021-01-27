@@ -1,13 +1,13 @@
 {
   "name": "exES",
-  "manifest_version": 3,
+  "manifest_version": 2,
   "version": "1.0",
-  "browser_action": {
+  "action": {
     "default_icon": "hamicre_vocal_album.jpg"
   },
   "content_scripts": [
     {
-      "matches": ["https://www.google.com/", "https://www.google.com/"],
+      "matches": ["*://erogamescape.dyndns.org/*"],
       "js": ["content_scripts.js"]
     }
   ]
