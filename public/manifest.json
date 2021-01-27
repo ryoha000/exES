@@ -1,0 +1,14 @@
+{
+  "name": "exES",
+  "manifest_version": 3,
+  "version": "1.0",
+  "browser_action": {
+    "default_icon": "hamicre_vocal_album.jpg"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.google.com/", "https://www.google.com/"],
+      "js": ["content_scripts.js"]
+    }
+  ]
+}
