@@ -1,29 +1,31 @@
-import { getAmazonPrices, getDlsitePrice, getFanzaPrice, getJANCodeWithAssociatedPrices } from './scrape'
+import { getAmazonPrices, getDlsitePrice, getFanzaPrice, getJANCodeWithAssociatedPrices, getPastSaleInfo } from './scrape'
 
 window.addEventListener('load', async () => {
   insertElement()
   const links = getExternalLinks()
-  if (links.getchu.length) {
-    const getchu = await getJANCodeWithAssociatedPrices(links.getchu[0])
-    console.log(getchu)
-    if (getchu) {
-      console.log(`JAN: ${getchu.janCode}`)
-    }
+  const infos = await getPastSaleInfo()
+  console.log(infos)
+  // if (links.getchu.length) {
+  //   const getchu = await getJANCodeWithAssociatedPrices(links.getchu[0])
+  //   console.log(getchu)
+  //   if (getchu) {
+  //     console.log(`JAN: ${getchu.janCode}`)
+  //   }
 
-    const fanza = await getFanzaPrice(links.fanza)
-    console.log(fanza)
+  //   const fanza = await getFanzaPrice(links.fanza)
+  //   console.log(fanza)
 
-    if (links.dlsite.length !== 0) {
-      const dlsite = await getDlsitePrice(links.dlsite[0])
-      console.log(dlsite)
-    }
+  //   if (links.dlsite.length !== 0) {
+  //     const dlsite = await getDlsitePrice(links.dlsite[0])
+  //     console.log(dlsite)
+  //   }
 
-    const start = performance.now()
-    console.log("get amazon start")
-    const amazonz = await getAmazonPrices(links.amazon)
-    console.log("amazon end", (performance.now() - start) / 1000)
-    console.log(amazonz)
-  } else { console.log("getchu url is not found") }
+  //   const start = performance.now()
+  //   console.log("get amazon start")
+  //   const amazonz = await getAmazonPrices(links.amazon)
+  //   console.log("amazon end", (performance.now() - start) / 1000)
+  //   console.log(amazonz)
+  // } else { console.log("getchu url is not found") }
 })
 
 const BEFORE_ELEMENT_ID = "image_and_basic_infomation"
