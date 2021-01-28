@@ -1,4 +1,4 @@
-import { getAmazonPrices, getFanzaPrice, getJANCodeWithAssociatedPrices } from './scrape'
+import { getAmazonPrices, getDlsitePrice, getFanzaPrice, getJANCodeWithAssociatedPrices } from './scrape'
 
 window.addEventListener('load', async () => {
   insertElement()
@@ -12,6 +12,11 @@ window.addEventListener('load', async () => {
 
     const fanza = await getFanzaPrice(links.fanza)
     console.log(fanza)
+
+    if (links.dlsite.length !== 0) {
+      const dlsite = await getDlsitePrice(links.dlsite[0])
+      console.log(dlsite)
+    }
 
     const start = performance.now()
     console.log("get amazon start")

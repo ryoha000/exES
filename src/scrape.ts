@@ -1,4 +1,4 @@
-import { getASINFromAmazonURL, sleep } from "./utils"
+import { getASINFromAmazonURL, getDlsiteIDFromURL, sleep } from "./utils"
 
 const BASE_URL = "http://localhost:3000"
 
@@ -96,5 +96,21 @@ export const getFanzaPrice = async (urls: URL[]): Promise<FanzaResponse[]> => {
   } catch (e) {
     console.error(e)
     return []
+  }
+}
+
+type DlsiteResponse = FanzaResponse
+export const getDlsitePrice = async (url: URL): Promise<DlsiteResponse | null> => {
+  try {
+    const id = getDlsiteIDFromURL(url)
+    const res = await fetch(`${BASE_URL}/dlsite`, {
+      method: "POST",
+      body: JSON.stringify({ id: id })
+    })
+    const text = await res.text()
+    return JSON.parse(text) as DlsiteResponse
+  } catch (e) {
+    console.error(e)
+    return null
   }
 }
