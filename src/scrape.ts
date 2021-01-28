@@ -1,5 +1,7 @@
 import { getASINFromAmazonURL, sleep } from "./utils"
 
+const BASE_URL = "http://localhost:3000"
+
 interface JANCodeWithAssociatedPrices {
   janCode: string
   getchuPrice: number
@@ -13,7 +15,7 @@ export const getJANCodeWithAssociatedPrices = async (url: URL): Promise<JANCodeW
     console.error("批評空間の仕様が変わりました。@ryoha000 に報告していただければ幸いです。")
     return null
   }
-  const res = await fetch(`http://localhost:3000/getchu`, {
+  const res = await fetch(`${BASE_URL}/getchu`, {
     method: "POST",
     body: JSON.stringify({ id: id })
   })
@@ -36,7 +38,7 @@ export const getAmazonPrices = async (urls: URL[]): Promise<AmazonResponse[]> =>
   let tryCount = 0
   const requestAmazonPrice = async (asin: string): Promise<AmazonResponse> => {
     try {
-      const res = await fetch(`http://localhost:3000/amazon`, {
+      const res = await fetch(`${BASE_URL}/amazon`, {
         method: "POST",
         body: JSON.stringify({ asin: asin })
       })
@@ -71,4 +73,28 @@ export const getAmazonPrices = async (urls: URL[]): Promise<AmazonResponse[]> =>
     }
   }
   return res
+}
+
+interface FanzaResponse {
+  price: number
+}
+
+export const getFanzaPrice = async (urls: URL[]): Promise<FanzaResponse[]> => {
+  try {
+    const result = []
+    for (const url of urls) {
+      const redirectURL = url.searchParams.get("lurl")
+      if (!redirectURL) continue
+      const res = await fetch(`${BASE_URL}/fanza`, {
+        method: "POST",
+        body: JSON.stringify({ url: redirectURL })
+      })
+      const text = await res.text()
+      result.push(JSON.parse(text) as FanzaResponse)
+    }
+    return result
+  } catch (e) {
+    console.error(e)
+    return []
+  }
 }

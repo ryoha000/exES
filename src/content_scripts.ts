@@ -1,4 +1,4 @@
-import { getAmazonPrices, getJANCodeWithAssociatedPrices } from './scrape'
+import { getAmazonPrices, getFanzaPrice, getJANCodeWithAssociatedPrices } from './scrape'
 
 window.addEventListener('load', async () => {
   insertElement()
@@ -6,15 +6,18 @@ window.addEventListener('load', async () => {
   if (links.getchu.length) {
     const getchu = await getJANCodeWithAssociatedPrices(links.getchu[0])
     console.log(getchu)
+    if (getchu) {
+      console.log(`JAN: ${getchu.janCode}`)
+    }
+
+    const fanza = await getFanzaPrice(links.fanza)
+    console.log(fanza)
 
     const start = performance.now()
     console.log("get amazon start")
     const amazonz = await getAmazonPrices(links.amazon)
     console.log("amazon end", (performance.now() - start) / 1000)
     console.log(amazonz)
-    if (getchu) {
-      console.log(`JAN: ${getchu.janCode}`)
-    }
   } else { console.log("getchu url is not found") }
 })
 
