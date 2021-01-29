@@ -21,29 +21,6 @@ window.addEventListener('load', async () => {
   } catch (e) {
     console.error(e)
   }
-  // const infos = await getPastSaleInfo()
-  // console.log(infos)
-  // if (links.getchu.length) {
-  //   const getchu = await getJANCodeWithAssociatedPrices(links.getchu[0])
-  //   console.log(getchu)
-  //   if (getchu) {
-  //     console.log(`JAN: ${getchu.janCode}`)
-  //   }
-
-  //   const fanza = await getFanzaPrice(links.fanza)
-  //   console.log(fanza)
-
-  //   if (links.dlsite.length !== 0) {
-  //     const dlsite = await getDlsitePrice(links.dlsite[0])
-  //     console.log(dlsite)
-  //   }
-
-  //   const start = performance.now()
-  //   console.log("get amazon start")
-  //   const amazonz = await getAmazonPrices(links.amazon)
-  //   console.log("amazon end", (performance.now() - start) / 1000)
-  //   console.log(amazonz)
-  // } else { console.log("getchu url is not found") }
 })
 
 const App = () => {
