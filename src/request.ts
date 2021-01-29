@@ -1,4 +1,4 @@
-import { ExternalLinks, getAmazonPrice, getDlsitePrice, getFanzaPrice, getJANCodeWithAssociatedPrice, ResultResponse } from './scrape'
+import { ExternalLinks, getAmazonPrice, getDlsitePrice, getFanzaPrice, getJANCodeWithAssociatedPrice, getPastSaleInfo, ResultResponse } from './scrape'
 import { Store } from './store'
 
 export const getRequestPromises = (store: Store, links: ExternalLinks) => {
@@ -13,6 +13,11 @@ export const getRequestPromises = (store: Store, links: ExternalLinks) => {
   if (links.getchu) promises.push(updateCallback(store, getJANCodeWithAssociatedPrice(links.getchu)))
   if (links.dlsite) promises.push(updateCallback(store, getDlsitePrice(links.dlsite)))
   if (links.fanza) promises.push(updateCallback(store, getFanzaPrice(links.fanza)))
+  promises.push((async () => {
+    const saleInfos = await getPastSaleInfo()
+    const tmp = store()
+    store({ saleInfos: [...tmp.saleInfos, ...saleInfos] })
+  })())
   return promises
 }
 
