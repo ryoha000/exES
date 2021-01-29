@@ -2,6 +2,13 @@ import { getASINFromAmazonURL, getDlsiteIDFromURL, sleep } from "./utils"
 
 const BASE_URL = "http://localhost:3000"
 
+export interface ResultResponse {
+  title: string
+  price: number
+  titleURL?: string
+  priceURL?: string
+}
+
 interface JANCodeWithAssociatedPrices {
   janCode: string
   getchuPrice: number
@@ -9,7 +16,7 @@ interface JANCodeWithAssociatedPrices {
   surugaya: null | { used: number; marketplace: number }
 }
 
-export const getJANCodeWithAssociatedPrices = async (url: URL): Promise<JANCodeWithAssociatedPrices | null> => {
+export const getJANCodeWithAssociatedPrice = async (url: URL): Promise<ResultResponse[] | null> => {
   const id = url.searchParams.get("id")
   if (!id) {
     console.error("批評空間の仕様が変わりました。@ryoha000 に報告していただければ幸いです。")
@@ -21,7 +28,29 @@ export const getJANCodeWithAssociatedPrices = async (url: URL): Promise<JANCodeW
   })
   try {
     const text = await res.text()
-    return JSON.parse(text) as JANCodeWithAssociatedPrices
+    const jcwap = JSON.parse(text) as JANCodeWithAssociatedPrices
+
+    const result: ResultResponse[] = []
+    if (jcwap.getchuPrice) {
+      result.push({ title: "Getchu", price: jcwap.getchuPrice })
+    }
+    if (jcwap.sofmap) {
+      if (jcwap.sofmap.used) {
+        result.push({ title: "Sofmap(中古)", price: jcwap.sofmap.used })
+      }
+      if (jcwap.sofmap.brandNew) {
+        result.push({ title: "Sofmap(新品)", price: jcwap.sofmap.brandNew })
+      }
+    }
+    if (jcwap.surugaya) {
+      if (jcwap.surugaya.used) {
+        result.push({ title: "駿河屋(中古)", price: jcwap.surugaya.used })
+      }
+      if (jcwap.surugaya.marketplace) {
+        result.push({ title: "駿河屋(マケプレ)", price: jcwap.surugaya.marketplace })
+      }
+    }
+    return result
   } catch (e) {
     console.error(e)
     console.error("Getchu.comの仕様が変わりました。@ryoha000 に報告していただければ幸いです。")
@@ -34,7 +63,7 @@ interface AmazonResponse {
   title: string
 }
 
-export const getAmazonPrices = async (urls: URL[]): Promise<AmazonResponse[]> => {
+export const getAmazonPrice = async (url: URL): Promise<ResultResponse | null> => {
   let tryCount = 0
   const requestAmazonPrice = async (asin: string): Promise<AmazonResponse> => {
     try {
@@ -58,49 +87,44 @@ export const getAmazonPrices = async (urls: URL[]): Promise<AmazonResponse[]> =>
     }
   }
 
-  const res: AmazonResponse[] = []
-  for (const url of urls) {
-    tryCount = 0
-    const asin = getASINFromAmazonURL(url)
-    if (asin.length === 0) {
-      res.push({ price: 0, title: "" })
-    }
-    try {
-      // サーバーからAmazonに同時にリクエストを送りたくないからわざと直列にしてる
-      res.push(await requestAmazonPrice(asin))
-    } catch (e) {
-      console.error(e)
-    }
+  const asin = getASINFromAmazonURL(url)
+  if (asin.length === 0) {
+    return null
   }
-  return res
+  try {
+    // サーバーからAmazonに同時にリクエストを送りたくないからわざと直列にしてる
+    return await requestAmazonPrice(asin)
+  } catch (e) {
+    console.error(e)
+    return null
+  }
 }
 
 interface FanzaResponse {
   price: number
 }
 
-export const getFanzaPrice = async (urls: URL[]): Promise<FanzaResponse[]> => {
+export const getFanzaPrice = async (url: URL): Promise<ResultResponse | null> => {
   try {
-    const result = []
-    for (const url of urls) {
-      const redirectURL = url.searchParams.get("lurl")
-      if (!redirectURL) continue
-      const res = await fetch(`${BASE_URL}/fanza`, {
-        method: "POST",
-        body: JSON.stringify({ url: redirectURL })
-      })
-      const text = await res.text()
-      result.push(JSON.parse(text) as FanzaResponse)
+    const redirectURL = url.searchParams.get("lurl")
+    const res = await fetch(`${BASE_URL}/fanza`, {
+      method: "POST",
+      body: JSON.stringify({ url: redirectURL })
+    })
+    const text = await res.text()
+    const response = JSON.parse(text) as FanzaResponse
+    if (!response.price) {
+      return null
     }
-    return result
+    return { title: "FANZA", price: response.price }
   } catch (e) {
     console.error(e)
-    return []
+    return null
   }
 }
 
 type DlsiteResponse = FanzaResponse
-export const getDlsitePrice = async (url: URL): Promise<DlsiteResponse | null> => {
+export const getDlsitePrice = async (url: URL): Promise<ResultResponse | null> => {
   try {
     const id = getDlsiteIDFromURL(url)
     const res = await fetch(`${BASE_URL}/dlsite`, {
@@ -108,7 +132,11 @@ export const getDlsitePrice = async (url: URL): Promise<DlsiteResponse | null> =
       body: JSON.stringify({ id: id })
     })
     const text = await res.text()
-    return JSON.parse(text) as DlsiteResponse
+    const response = JSON.parse(text) as DlsiteResponse
+    if (!response.price) {
+      return null
+    }
+    return { title: "dlsite", price: response.price }
   } catch (e) {
     console.error(e)
     return null
