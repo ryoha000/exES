@@ -152,3 +152,31 @@ export const getPastSaleInfo = async () => {
     return []
   }
 }
+
+const EXTERNAL_LINKS_ID = "bottom_inter_links_main"
+type ExternalSiteName = "amazon" | "getchu" | "dlsite" | "fanza"
+type LinkSiteName = "comshop" | "sofmap" | "surugaya" | ExternalSiteName
+export const getExternalLinks = () => {
+  const linksContainer = document.getElementById(EXTERNAL_LINKS_ID)
+  if (!linksContainer) {
+    throw "批評空間の仕様が変わりました。@ryoha000 に報告していただければ幸いです。"
+  }
+
+  const links: { [key in ExternalSiteName]: URL[] } = { amazon: [], getchu: [], dlsite: [], fanza: [] }
+  linksContainer.querySelectorAll('a').forEach(link => {
+    const url = new URL(link.href)
+    if (link.innerHTML === "Amazon") {
+      links.amazon.push(url)
+    }
+    if (link.innerHTML === "Getchu.com") {
+      links.getchu.push(url)
+    }
+    if (link.innerHTML === "DLsite.com") {
+      links.dlsite.push(url)
+    }
+    if (link.innerHTML === "DMM") {
+      links.fanza.push(url)
+    }
+  })
+  return links
+}
