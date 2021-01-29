@@ -1,7 +1,19 @@
 import { getAmazonPrices, getDlsitePrice, getFanzaPrice, getJANCodeWithAssociatedPrices, getPastSaleInfo } from './scrape'
+import { html, render } from 'lit-html'
+
+const App = () => html`
+  <div>
+    <h3>container</h3>
+  </div>
+`
 
 window.addEventListener('load', async () => {
-  insertElement()
+  const container = insertElement()
+  if (!container) {
+    console.log("this page is not target")
+    return
+  }
+  render(App(), container)
   const links = getExternalLinks()
   const infos = await getPastSaleInfo()
   console.log(infos)
@@ -39,6 +51,7 @@ const insertElement = () => {
   const container = document.createElement('div')
   container.innerHTML = 'container'
   beforeElement.parentNode?.insertBefore(container, beforeElement.nextElementSibling)
+  return container
 }
 
 const EXTERNAL_LINKS_ID = "bottom_inter_links_main"
