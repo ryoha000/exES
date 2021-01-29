@@ -1,10 +1,11 @@
-import { getAmazonPrices, getDlsitePrice, getFanzaPrice, getJANCodeWithAssociatedPrices, getPastSaleInfo } from './scrape'
 import { createStore } from './store'
 import { html, render } from "lit-html"
 import Item from './components/item'
 import { styleMap } from 'lit-html/directives/style-map.js';
 import { Store } from './store'
 import { getExternalLinks } from './scrape'
+import { getRequestPromises } from './request';
+import allSettled from 'promise.allsettled'
 
 const InitialStore = { priceInfos: [], saleInfos: [] }
 
@@ -14,6 +15,9 @@ window.addEventListener('load', async () => {
     store = createStore(InitialStore, renderApp)
     renderApp()
     const links = getExternalLinks()
+    const promises = getRequestPromises(store, links)
+    const result = await allSettled(promises)
+    console.log(result)
   } catch (e) {
     console.error(e)
   }
