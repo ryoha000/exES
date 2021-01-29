@@ -1,5 +1,5 @@
 import { editONP } from "./edit_distance"
-import { getASINFromAmazonURL, getDlsiteIDFromURL, sleep } from "./utils"
+import { getASINFromAmazonURL, getDlsiteRequestURL, sleep } from "./utils"
 
 const BASE_URL = "http://localhost:3000"
 
@@ -12,9 +12,9 @@ export interface ResultResponse {
 
 interface JANCodeWithAssociatedPrices {
   janCode: string
-  getchuPrice: number
-  sofmap: null | { used: number; brandNew: number }
-  surugaya: null | { used: number; marketplace: number }
+  getchu: ResultResponse
+  sofmap: ResultResponse[]
+  surugaya: ResultResponse[]
 }
 
 export const getJANCodeWithAssociatedPrice = async (url: URL): Promise<ResultResponse[] | null> => {
@@ -32,25 +32,9 @@ export const getJANCodeWithAssociatedPrice = async (url: URL): Promise<ResultRes
     const jcwap = JSON.parse(text) as JANCodeWithAssociatedPrices
 
     const result: ResultResponse[] = []
-    if (jcwap.getchuPrice) {
-      result.push({ title: "Getchu", price: jcwap.getchuPrice })
-    }
-    if (jcwap.sofmap) {
-      if (jcwap.sofmap.used) {
-        result.push({ title: "Sofmap(中古)", price: jcwap.sofmap.used })
-      }
-      if (jcwap.sofmap.brandNew) {
-        result.push({ title: "Sofmap(新品)", price: jcwap.sofmap.brandNew })
-      }
-    }
-    if (jcwap.surugaya) {
-      if (jcwap.surugaya.used) {
-        result.push({ title: "駿河屋(中古)", price: jcwap.surugaya.used })
-      }
-      if (jcwap.surugaya.marketplace) {
-        result.push({ title: "駿河屋(マケプレ)", price: jcwap.surugaya.marketplace })
-      }
-    }
+    result.push(jcwap.getchu)
+    result.push(...jcwap.sofmap)
+    result.push(...jcwap.surugaya)
     return result
   } catch (e) {
     console.error(e)
@@ -59,14 +43,9 @@ export const getJANCodeWithAssociatedPrice = async (url: URL): Promise<ResultRes
   }
 }
 
-interface AmazonResponse {
-  price: number
-  title: string
-}
-
 export const getAmazonPrice = async (url: URL): Promise<ResultResponse | null> => {
   let tryCount = 0
-  const requestAmazonPrice = async (asin: string): Promise<AmazonResponse> => {
+  const requestAmazonPrice = async (asin: string): Promise<ResultResponse> => {
     try {
       const res = await fetch(`${BASE_URL}/amazon`, {
         method: "POST",
@@ -76,7 +55,7 @@ export const getAmazonPrice = async (url: URL): Promise<ResultResponse | null> =
         throw new Error(await res.text())
       }
       const text = await res.text()
-      const response = JSON.parse(text) as AmazonResponse
+      const response = JSON.parse(text) as ResultResponse
 
       let max = { length: -1, distanse: 0 }
       const Len = " ErogameScape -エロゲー批評空間-".length
@@ -117,10 +96,6 @@ export const getAmazonPrice = async (url: URL): Promise<ResultResponse | null> =
   }
 }
 
-interface FanzaResponse {
-  price: number
-}
-
 export const getFanzaPrice = async (url: URL): Promise<ResultResponse | null> => {
   try {
     const redirectURL = url.searchParams.get("lurl")
@@ -129,31 +104,34 @@ export const getFanzaPrice = async (url: URL): Promise<ResultResponse | null> =>
       body: JSON.stringify({ url: redirectURL })
     })
     const text = await res.text()
-    const response = JSON.parse(text) as FanzaResponse
+    const response = JSON.parse(text) as ResultResponse
     if (!response.price) {
       return null
     }
-    return { title: "FANZA", price: response.price }
+    return response
   } catch (e) {
     console.error(e)
     return null
   }
 }
 
-type DlsiteResponse = FanzaResponse
+type DlsiteResponse = {
+  price: number
+}
+
 export const getDlsitePrice = async (url: URL): Promise<ResultResponse | null> => {
   try {
-    const id = getDlsiteIDFromURL(url)
+    const reqURL = getDlsiteRequestURL(url)
     const res = await fetch(`${BASE_URL}/dlsite`, {
       method: "POST",
-      body: JSON.stringify({ id: id })
+      body: JSON.stringify({ url: reqURL })
     })
     const text = await res.text()
     const response = JSON.parse(text) as DlsiteResponse
     if (!response.price) {
       return null
     }
-    return { title: "dlsite", price: response.price }
+    return { title: "dlsite", price: response.price, priceURL: url.toString() }
   } catch (e) {
     console.error(e)
     return null
