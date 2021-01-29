@@ -20,6 +20,7 @@ export const sleep = (msec: number) => new Promise<void>(resolve => setTimeout(r
 export const convertPriceInfosToRowInfos = (pis: PriceInfo[]) => {
   const rowInfos: RowInfo[] = []
   for (const pi of pis) {
+    if (!pi.price) continue
     rowInfos.push([
       { text: pi.title, url: pi.titleURL },
       { text: pi.price, url: pi.priceURL }
@@ -37,5 +38,5 @@ export const convertSaleInfosToRowInfos = (sis: SaleInfo[]) => {
       { text: si.content }
     ])
   }
-  return rowInfos
+  return rowInfos.reverse()
 }

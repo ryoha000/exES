@@ -16,8 +16,7 @@ window.addEventListener('load', async () => {
     renderApp()
     const links = getExternalLinks()
     const promises = getRequestPromises(store, links)
-    const result = await Promise.all(promises)
-    console.log(result)
+    await Promise.all(promises)
   } catch (e) {
     console.error(e)
   }
@@ -25,13 +24,14 @@ window.addEventListener('load', async () => {
 
 const App = () => {
   const styles = {
-    display: "grid",
-    "grid-template-columns": "repeat(auto-fill,minmax(250px,1fr))",
-    gap: "10px"
+    display: "flex",
+    'flex-wrap': 'wrap',
+    gap: "10px",
+    'margin-bottom': "10px"
   }
   return html`
     <div style="${styleMap(styles)}">
-      ${Item("各通販サイトの価格", ["サイト", "価格"], convertPriceInfosToRowInfos(store().priceInfos))}
+      ${Item("各通販サイトの価格", ["サイト", "価格"], convertPriceInfosToRowInfos(store().priceInfos), 2)}
       ${Item("過去のキャンペーン", ["期間", "内容"], convertSaleInfosToRowInfos(store().saleInfos))}
     </div>
   `
