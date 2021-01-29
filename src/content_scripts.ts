@@ -6,6 +6,7 @@ import { Store } from './store'
 import { getExternalLinks } from './scrape'
 import { getRequestPromises } from './request';
 import allSettled from 'promise.allsettled'
+import { convertPriceInfosToRowInfos, convertSaleInfosToRowInfos } from './utils';
 
 const InitialStore = { priceInfos: [], saleInfos: [] }
 
@@ -31,8 +32,8 @@ const App = () => {
   }
   return html`
     <div style="${styleMap(styles)}">
-      ${Item("各通販サイトの価格", ["サイト", "価格"], [])}
-      ${Item("過去のキャンペーン", ["期間", "内容"], [])}
+      ${Item("各通販サイトの価格", ["サイト", "価格"], convertPriceInfosToRowInfos(store().priceInfos))}
+      ${Item("過去のキャンペーン", ["期間", "内容"], convertSaleInfosToRowInfos(store().saleInfos))}
     </div>
   `
 }
