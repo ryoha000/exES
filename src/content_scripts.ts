@@ -25,7 +25,6 @@ window.addEventListener('load', async () => {
 const App = () => {
   const styles = {
     display: "flex",
-    'flex-wrap': 'wrap',
     gap: "10px",
     'margin-bottom': "10px"
   }

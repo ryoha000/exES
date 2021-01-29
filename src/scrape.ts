@@ -1,7 +1,8 @@
 import { editONP } from "./edit_distance"
 import { getASINFromAmazonURL, getDlsiteRequestURL, sleep } from "./utils"
 
-const BASE_URL = "http://localhost:3000"
+// const BASE_URL = "http://localhost:3000"
+const BASE_URL = "https://ryoha.trap.show/exes_server"
 
 export interface ResultResponse {
   title: string

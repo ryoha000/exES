@@ -1,6 +1,6 @@
 {
   "name": "exES",
-  "manifest_version": 3,
+  "manifest_version": 2,
   "version": "1.0.0",
   "description": "A chrome extention in ErogameScape. This allow you to overview price in some website.",
   "icons": {
@@ -13,5 +13,8 @@
       "matches": ["*://erogamescape.dyndns.org/*"],
       "js": ["content_scripts.js"]
     }
+  ],
+  "permissions": [
+    "*://erogamescape.dyndns.org/*"
   ]
 }
