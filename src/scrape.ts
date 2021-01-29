@@ -1,3 +1,4 @@
+import { editONP } from "./edit_distance"
 import { getASINFromAmazonURL, getDlsiteIDFromURL, sleep } from "./utils"
 
 const BASE_URL = "http://localhost:3000"
@@ -75,7 +76,23 @@ export const getAmazonPrice = async (url: URL): Promise<ResultResponse | null> =
         throw new Error(await res.text())
       }
       const text = await res.text()
-      return JSON.parse(text) as AmazonResponse
+      const response = JSON.parse(text) as AmazonResponse
+
+      let max = { length: -1, distanse: 0 }
+      const Len = " ErogameScape -エロゲー批評空間-".length
+      const title = document.title.slice(0, -1 * Len)
+      for (let i = 1; i <= response.title.length; i++) {
+        const thisDistanse = editONP(response.title.slice(0, i), title)
+        console.log(thisDistanse, response.title.slice(0, i))
+        if (max.distanse < thisDistanse) {
+          max.length = i
+          max.distanse = thisDistanse
+        }
+      }
+      if (max.length === response.title.length) {
+        return  { ...response, title: `Amazon`}
+      }
+      return { ...response, title: `Amazon(${response.title.slice(max.length)})`}
     } catch (e) {
       tryCount++
       console.error(e)
