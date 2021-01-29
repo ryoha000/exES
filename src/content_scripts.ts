@@ -11,14 +11,14 @@ const InitialStore = { priceInfos: [], saleInfos: [] }
 
 window.addEventListener('load', async () => {
   try {
+    const links = getExternalLinks()
     const renderApp = createApp()
     store = createStore(InitialStore, renderApp)
     renderApp()
-    const links = getExternalLinks()
     const promises = getRequestPromises(store, links)
     await Promise.all(promises)
   } catch (e) {
-    console.error(e)
+    // console.log(e)
   }
 })
 

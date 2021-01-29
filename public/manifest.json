@@ -1,9 +1,12 @@
 {
   "name": "exES",
-  "manifest_version": 2,
-  "version": "1.0",
-  "action": {
-    "default_icon": "hamicre_vocal_album.jpg"
+  "manifest_version": 3,
+  "version": "1.0.0",
+  "description": "A chrome extention in ErogameScape. This allow you to overview price in some website.",
+  "icons": {
+    "16": "logo16.png",
+    "48": "logo48.png",
+    "128": "logo128.png"
   },
   "content_scripts": [
     {
