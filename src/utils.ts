@@ -21,8 +21,7 @@ export const convertPriceInfosToRowInfos = (pis: PriceInfo[]) => {
   const rowInfos: RowInfo[] = []
   for (const pi of pis) {
     rowInfos.push([
-      { text: pi.title, url: pi.titleURL }
-    ],[
+      { text: pi.title, url: pi.titleURL },
       { text: pi.price, url: pi.priceURL }
     ])
   }
@@ -34,8 +33,7 @@ export const convertSaleInfosToRowInfos = (sis: SaleInfo[]) => {
   for (const si of sis) {
     const day = `${si.start.slice(0, 10)} ～ ${si.end.slice(0, 10)}`
     rowInfos.push([
-      { text: day }
-    ],[
+      { text: day },
       { text: si.content }
     ])
   }

@@ -5,13 +5,9 @@ export const Table = (header: string[], values: RowInfo[]) => html`
   <table>
     <tbody>
       <tr>
-        ${header.map(v => html`
-          <th>${v}</th>
-        `)}
+        ${header.map(v => html`<th>${v}</th>`)}
       </tr>
-      <tr>
-        ${values.map(TableRow)}
-      </tr>
+      ${values.map(TableRow)}
     </tbody>
   </table>
 `
