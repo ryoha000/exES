@@ -5,7 +5,6 @@ import { styleMap } from 'lit-html/directives/style-map.js';
 import { Store } from './store'
 import { getExternalLinks } from './scrape'
 import { getRequestPromises } from './request';
-import allSettled from 'promise.allsettled'
 import { convertPriceInfosToRowInfos, convertSaleInfosToRowInfos } from './utils';
 
 const InitialStore = { priceInfos: [], saleInfos: [] }
@@ -17,7 +16,7 @@ window.addEventListener('load', async () => {
     renderApp()
     const links = getExternalLinks()
     const promises = getRequestPromises(store, links)
-    const result = await allSettled(promises)
+    const result = await Promise.all(promises)
     console.log(result)
   } catch (e) {
     console.error(e)
