@@ -154,28 +154,33 @@ export const getPastSaleInfo = async () => {
 }
 
 const EXTERNAL_LINKS_ID = "bottom_inter_links_main"
-type ExternalSiteName = "amazon" | "getchu" | "dlsite" | "fanza"
-type LinkSiteName = "comshop" | "sofmap" | "surugaya" | ExternalSiteName
+export interface ExternalLinks {
+  amazon: URL[]
+  getchu?: URL
+  dlsite?: URL
+  fanza?: URL
+}
+
 export const getExternalLinks = () => {
   const linksContainer = document.getElementById(EXTERNAL_LINKS_ID)
   if (!linksContainer) {
     throw "批評空間の仕様が変わりました。@ryoha000 に報告していただければ幸いです。"
   }
 
-  const links: { [key in ExternalSiteName]: URL[] } = { amazon: [], getchu: [], dlsite: [], fanza: [] }
+  const links: ExternalLinks = { amazon: [] }
   linksContainer.querySelectorAll('a').forEach(link => {
     const url = new URL(link.href)
     if (link.innerHTML === "Amazon") {
       links.amazon.push(url)
     }
     if (link.innerHTML === "Getchu.com") {
-      links.getchu.push(url)
+      links.getchu = url
     }
     if (link.innerHTML === "DLsite.com") {
-      links.dlsite.push(url)
+      links.dlsite = url
     }
     if (link.innerHTML === "DMM") {
-      links.fanza.push(url)
+      links.fanza = url
     }
   })
   return links
