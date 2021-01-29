@@ -7,9 +7,9 @@ interface State {
 
 export interface PriceInfo {
   title: string
-  titleURL: string
-  price: string
-  priceURL: string
+  titleURL?: string
+  price: number
+  priceURL?: string
 }
 
 export interface SaleInfo {
