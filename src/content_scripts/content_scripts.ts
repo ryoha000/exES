@@ -1,6 +1,6 @@
 import { createStore } from './store'
 import { html, render } from "lit-html"
-import Item from './components/item'
+import Item from './item'
 import { styleMap } from 'lit-html/directives/style-map.js';
 import { Store } from './store'
 import { getExternalLinks } from './scrape'

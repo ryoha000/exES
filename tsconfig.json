@@ -69,7 +69,7 @@
   },
   "include": [
     "src/*"
-  ],
+, "src/content_scripts/components", "src/content_scripts/item.ts", "src/content_scripts/content_scripts.ts", "src/content_scripts/edit_distance.ts", "src/content_scripts/request.ts", "src/content_scripts/store.ts", "src/content_scripts/scrape.ts", "src/content_scripts/utils.ts"  ],
   "exclude": [
     "/"
   ]
