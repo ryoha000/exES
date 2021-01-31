@@ -5,7 +5,7 @@ const config = () => {
   return {
     entry: {
       content_scripts: path.join(__dirname, 'src/content_scripts', 'content_scripts.ts'),
-      event: path.join(__dirname, 'src/event', 'event.ts')
+      background: path.join(__dirname, 'src/background', 'background.ts')
     },
     output: {
       // distディレクトリにcontent_scripts.jsを吐く

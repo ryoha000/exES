@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "description": "A chrome extention in ErogameScape. This allow you to overview price in some website.",
   "background": {
-    "scripts": ["event.js"],
-    "persistent": false
+    "scripts": ["background.js"],
+    "persistent": true
   },
   "icons": {
     "16": "logo16.png",
@@ -19,6 +19,7 @@
     }
   ],
   "permissions": [
-    "*://erogamescape.dyndns.org/*"
+    "*://erogamescape.dyndns.org/*",
+    "webRequest"
   ]
 }
