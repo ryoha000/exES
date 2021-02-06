@@ -47,3 +47,17 @@ export const convertSaleInfosToRowInfos = (sis: SaleInfo[]) => {
   }
   return rowInfos.reverse()
 }
+
+export const backgroundFetch = (url :string) => {
+  return new Promise<string>((resolve, reject) => {
+    try {
+      // @ts-ignore
+      chrome.runtime.sendMessage(
+        url,
+        (data: string) => resolve(data)
+      )
+    } catch (e) {
+      reject(e)
+    }
+  })
+}

@@ -1,8 +1,9 @@
 // @ts-ignore
-chrome.webRequest.onBeforeRequest.addListener(
-  function (details: { url: string }) {
-    console.log(details.url);
-  },
-  {urls: ['<all_urls>']},
-  []
-);
+chrome.runtime.onMessage.addListener(
+  (url: string, _: () => void, onSuccess: (res: string) => void) => {
+    fetch(url)
+      .then(response => response.text())
+      .then(responseText => onSuccess(responseText))
+    return true
+  }
+)
