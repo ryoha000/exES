@@ -20,6 +20,10 @@
   },
   "permissions": [
     "*://erogamescape.dyndns.org/*",
+    "*://*.amazon.jp/*",
+    "*://*.getchu.com/*",
+    "*://*.sofmap.com/*",
+    "*://*.suruga-ya.jp/*",
     "declarativeNetRequest"
   ],
   "declarative_net_request": {
