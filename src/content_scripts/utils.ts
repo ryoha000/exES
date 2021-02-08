@@ -1,5 +1,6 @@
 import { RowInfo } from "./components/table_row"
 import { PriceInfo, SaleInfo } from "./store"
+import { IFetchMessageRequest, IFetchMessageResult } from '../utils'
 
 export const getASINFromAmazonURL = (url: URL) => {
   const paths = url.pathname.split("/")
@@ -48,13 +49,13 @@ export const convertSaleInfosToRowInfos = (sis: SaleInfo[]) => {
   return rowInfos.reverse()
 }
 
-export const backgroundFetch = (url :string) => {
-  return new Promise<string>((resolve, reject) => {
+export const backgroundFetch = (req: IFetchMessageRequest) => {
+  return new Promise<IFetchMessageResult>((resolve, reject) => {
     try {
       // @ts-ignore
       chrome.runtime.sendMessage(
-        url,
-        (data: string) => resolve(data)
+        req,
+        (data: IFetchMessageResult) => resolve(data)
       )
     } catch (e) {
       reject(e)
