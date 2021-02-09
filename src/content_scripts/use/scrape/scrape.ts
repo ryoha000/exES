@@ -1,5 +1,5 @@
 import { editONP } from "../edit_distance"
-import { getASINFromAmazonURL, getDlsiteRequestURL, sleep } from "../utils"
+import { getASINFromAmazonURL, getDlsiteRequestURL } from "../utils"
 import scrapeAmazon from './amazon'
 import scrapeSofmap from './sofmap'
 import scrapeGetchu from './getchu'
@@ -77,7 +77,6 @@ export const getAmazonPrice = async (url: URL): Promise<ResultResponse | null> =
       if (tryCount > 5) {
         throw new Error("over 5 fail")
       }
-      await sleep(1000)
       return await requestAmazonPrice(asin)
     }
   }
