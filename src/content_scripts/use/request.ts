@@ -3,13 +3,10 @@ import { Store } from '../store'
 
 export const getRequestPromises = (store: Store, links: ExternalLinks) => {
   const promises = []
-  const amazonPromise = async () => {
-    for (const url of links.amazon) {
-      await updateCallback(store, getAmazonPrice(url))
-    }
+  
+  for (const url of links.amazon) {
+    promises.push(updateCallback(store, getAmazonPrice(url)))
   }
-
-  promises.push(amazonPromise())
   if (links.getchu) promises.push(updateCallback(store, getJANCodeWithAssociatedPrice(links.getchu)))
   if (links.dlsite) promises.push(updateCallback(store, getDlsitePrice(links.dlsite)))
   if (links.fanza) promises.push(updateCallback(store, getFanzaPrice(links.fanza)))
