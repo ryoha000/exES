@@ -1,5 +1,5 @@
-import { ExternalLinks, getAmazonPrice, getDlsitePrice, getFanzaPrice, getJANCodeWithAssociatedPrice, getPastSaleInfo, ResultResponse } from './scrape'
-import { Store } from './store'
+import { ExternalLinks, getAmazonPrice, getDlsitePrice, getFanzaPrice, getJANCodeWithAssociatedPrice, getPastSaleInfo, ResultResponse } from './scrape/scrape'
+import { Store } from '../store'
 
 export const getRequestPromises = (store: Store, links: ExternalLinks) => {
   const promises = []

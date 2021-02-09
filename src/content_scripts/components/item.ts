@@ -1,6 +1,6 @@
 import { html } from "lit-html"
-import Table from './components/table'
-import { RowInfo } from './components/table_row'
+import Table from './table'
+import { RowInfo } from './table_row'
 import { styleMap } from 'lit-html/directives/style-map.js';
 
 const Item = (title: string, header: string[], values: RowInfo[], grow?: number) => {

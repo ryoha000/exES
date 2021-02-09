@@ -1,11 +1,11 @@
 import { createStore } from './store'
 import { html, render } from "lit-html"
-import Item from './item'
+import Item from './components/item'
 import { styleMap } from 'lit-html/directives/style-map.js';
 import { Store } from './store'
-import { getExternalLinks } from './scrape'
-import { getRequestPromises } from './request';
-import { convertPriceInfosToRowInfos, convertSaleInfosToRowInfos } from './utils';
+import { getExternalLinks } from './use/scrape/scrape'
+import { getRequestPromises } from './use/request';
+import { convertPriceInfosToRowInfos, convertSaleInfosToRowInfos } from './use/utils';
 
 const InitialStore = { priceInfos: [], saleInfos: [] }
 

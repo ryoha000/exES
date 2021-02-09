@@ -1,6 +1,6 @@
-import { RowInfo } from "./components/table_row"
-import { PriceInfo, SaleInfo } from "./store"
-import { IFetchMessageRequest, IFetchMessageResult } from '../utils'
+import { RowInfo } from "../components/table_row"
+import { PriceInfo, SaleInfo } from "../store"
+import { IFetchMessageRequest, IFetchMessageResult } from '../../utils'
 
 export const getASINFromAmazonURL = (url: URL) => {
   const paths = url.pathname.split("/")
