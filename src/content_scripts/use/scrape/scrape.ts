@@ -1,6 +1,9 @@
 import { editONP } from "../edit_distance"
 import { getASINFromAmazonURL, getDlsiteRequestURL, sleep } from "../utils"
 
+export const getNumber = (str: string) => +str.replace(/[^0-9]/g, '');
+export const removeNewLine = (str: string) => str.replace(/\n/g, '')
+
 // const BASE_URL = "http://localhost:3000"
 const BASE_URL = "https://ryoha.trap.show/exes_server"
 
