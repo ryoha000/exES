@@ -1,6 +1,9 @@
 import { editONP } from "../edit_distance"
 import { getASINFromAmazonURL, getDlsiteRequestURL, sleep } from "../utils"
 import scrapeAmazon from './amazon'
+import scrapeSofmap from './sofmap'
+import scrapeGetchu from './getchu'
+import scrapeSurugaya from './surugaya'
 
 export const getNumber = (str: string) => +str.replace(/[^0-9]/g, '');
 export const removeNewLine = (str: string) => str.replace(/\n/g, '')
@@ -15,31 +18,27 @@ export interface ResultResponse {
   priceURL?: string
 }
 
-interface JANCodeWithAssociatedPrices {
+export interface JANCodeWithAssociatedPrices {
   janCode: string
   getchu: ResultResponse
-  sofmap: ResultResponse[]
-  surugaya: ResultResponse[]
 }
 
 export const getJANCodeWithAssociatedPrice = async (url: URL): Promise<ResultResponse[] | null> => {
-  const id = url.searchParams.get("id")
-  if (!id) {
-    console.error("批評空間の仕様が変わりました。@ryoha000 に報告していただければ幸いです。")
-    return null
-  }
-  const res = await fetch(`${BASE_URL}/getchu`, {
-    method: "POST",
-    body: JSON.stringify({ id: id })
-  })
   try {
-    const text = await res.text()
-    const jcwap = JSON.parse(text) as JANCodeWithAssociatedPrices
-
+    const id = url.searchParams.get("id")
+    if (!id) {
+      console.error("批評空間の仕様が変わりました。@ryoha000 に報告していただければ幸いです。")
+      return null
+    }
+    const janWithGetchu = await scrapeGetchu(id)
+    const responses = await Promise.all([
+      scrapeSurugaya(janWithGetchu.janCode),
+      scrapeSofmap(janWithGetchu.janCode)
+    ])
     const result: ResultResponse[] = []
-    result.push(jcwap.getchu)
-    result.push(...jcwap.sofmap)
-    result.push(...jcwap.surugaya)
+    result.push(janWithGetchu.getchu)
+    result.push(...responses[0])
+    result.push(...responses[1])
     return result
   } catch (e) {
     console.error(e)
@@ -55,6 +54,7 @@ export const getAmazonPrice = async (url: URL): Promise<ResultResponse | null> =
       const response = await scrapeAmazon(asin)
 
       let max = { length: -1, distanse: 0 }
+      // タイトル(通常版)　みたいな表記の時　(通常版)　だけを表示するように
       const SiteNameLength = " ErogameScape -エロゲー批評空間-".length
       const title = document.title.slice(0, -1 * SiteNameLength)
       for (let i = 1; i <= response.title.length; i++) {

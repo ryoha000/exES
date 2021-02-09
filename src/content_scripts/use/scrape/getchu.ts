@@ -26,7 +26,7 @@ const scrapeGetchu = async (id: string): Promise<JANCodeWithAssociatedPrices> =>
     }
   })
 
-  return { janCode: code, getchu: { title: "Getchu", priceURL: "http://www.getchu.com/soft.phtml?id=" + id, price: getchuPrice }, sofmap: [], surugaya: [] }
+  return { janCode: code, getchu: { title: "Getchu", priceURL: "http://www.getchu.com/soft.phtml?id=" + id, price: getchuPrice } }
 }
 
 export default scrapeGetchu

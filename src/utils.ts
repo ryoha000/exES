@@ -1,5 +1,5 @@
 interface Param {
-  [key: string]: string
+  [key: string]: string | number
 }
 
 export interface IFetchMessageRequest {
