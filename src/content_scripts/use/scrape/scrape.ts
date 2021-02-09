@@ -10,9 +10,6 @@ import scrapeDlsite from './dlsite'
 export const getNumber = (str: string) => +str.replace(/[^0-9]/g, '');
 export const removeNewLine = (str: string) => str.replace(/\n/g, '')
 
-// const BASE_URL = "http://localhost:3000"
-const BASE_URL = "https://ryoha.trap.show/exes_server"
-
 export interface ResultResponse {
   title: string
   price: number
