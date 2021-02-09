@@ -4,6 +4,7 @@ import scrapeAmazon from './amazon'
 import scrapeSofmap from './sofmap'
 import scrapeGetchu from './getchu'
 import scrapeSurugaya from './surugaya'
+import scrapeFanza from './fanza'
 
 export const getNumber = (str: string) => +str.replace(/[^0-9]/g, '');
 export const removeNewLine = (str: string) => str.replace(/\n/g, '')
@@ -96,12 +97,10 @@ export const getAmazonPrice = async (url: URL): Promise<ResultResponse | null> =
 export const getFanzaPrice = async (url: URL): Promise<ResultResponse | null> => {
   try {
     const redirectURL = url.searchParams.get("lurl")
-    const res = await fetch(`${BASE_URL}/fanza`, {
-      method: "POST",
-      body: JSON.stringify({ url: redirectURL })
-    })
-    const text = await res.text()
-    const response = JSON.parse(text) as ResultResponse
+    if (!redirectURL) {
+      return null
+    }
+    const response = await scrapeFanza(redirectURL)
     if (!response.price) {
       return null
     }
