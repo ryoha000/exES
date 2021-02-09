@@ -21,9 +21,12 @@
   "permissions": [
     "*://erogamescape.dyndns.org/*",
     "*://*.amazon.jp/*",
+    "*://*.amazon.co.jp/*",
     "*://*.getchu.com/*",
     "*://*.sofmap.com/*",
     "*://*.suruga-ya.jp/*",
+    "*://*.dmm.co.jp/*",
+    "*://*.dlsite.com/*",
     "declarativeNetRequest"
   ],
   "declarative_net_request": {
@@ -47,6 +50,16 @@
         "id": "surugaya",
         "enabled": true,
         "path": "surugaya_rule.json"
+      },
+      {
+        "id": "dlsite",
+        "enabled": true,
+        "path": "dlsite_rule.json"
+      },
+      {
+        "id": "fanza",
+        "enabled": true,
+        "path": "fanza_rule.json"
       }
     ]
   }
