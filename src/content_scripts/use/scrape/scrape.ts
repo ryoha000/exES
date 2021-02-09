@@ -1,5 +1,6 @@
 import { editONP } from "../edit_distance"
 import { getASINFromAmazonURL, getDlsiteRequestURL, sleep } from "../utils"
+import scrapeAmazon from './amazon'
 
 export const getNumber = (str: string) => +str.replace(/[^0-9]/g, '');
 export const removeNewLine = (str: string) => str.replace(/\n/g, '')
@@ -51,19 +52,11 @@ export const getAmazonPrice = async (url: URL): Promise<ResultResponse | null> =
   let tryCount = 0
   const requestAmazonPrice = async (asin: string): Promise<ResultResponse> => {
     try {
-      const res = await fetch(`${BASE_URL}/amazon`, {
-        method: "POST",
-        body: JSON.stringify({ asin: asin })
-      })
-      if (!res.ok) {
-        throw new Error(await res.text())
-      }
-      const text = await res.text()
-      const response = JSON.parse(text) as ResultResponse
+      const response = await scrapeAmazon(asin)
 
       let max = { length: -1, distanse: 0 }
-      const Len = " ErogameScape -エロゲー批評空間-".length
-      const title = document.title.slice(0, -1 * Len)
+      const SiteNameLength = " ErogameScape -エロゲー批評空間-".length
+      const title = document.title.slice(0, -1 * SiteNameLength)
       for (let i = 1; i <= response.title.length; i++) {
         const thisDistanse = editONP(response.title.slice(0, i), title)
         console.log(thisDistanse, response.title.slice(0, i))
