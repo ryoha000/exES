@@ -7,7 +7,14 @@ export interface IFetchMessageRequest {
   params?: Param
 }
 
-export interface IFetchMessageResult {
-  type: 'error' | 'success'
-  body: string | Error
+export type IFetchMessageResult = IFetchMessageSuccess | IFetchMessageError
+
+export interface IFetchMessageSuccess {
+  type: 'success'
+  body: string
+}
+
+export interface IFetchMessageError {
+  type: 'error'
+  body: Error
 }

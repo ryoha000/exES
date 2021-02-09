@@ -50,13 +50,16 @@ export const convertSaleInfosToRowInfos = (sis: SaleInfo[]) => {
 }
 
 export const backgroundFetch = (req: IFetchMessageRequest) => {
-  return new Promise<IFetchMessageResult>((resolve, reject) => {
+  return new Promise<string>((resolve, reject) => {
     try {
       // @ts-ignore
-      chrome.runtime.sendMessage(
-        req,
-        (data: IFetchMessageResult) => resolve(data)
-      )
+      chrome.runtime.sendMessage(req, (data: IFetchMessageResult) => {
+        if (data.type === 'error') {
+          reject(data.body)
+        } else {
+          resolve(data.body)
+        }
+      })
     } catch (e) {
       reject(e)
     }
