@@ -5,6 +5,7 @@ import scrapeSofmap from './sofmap'
 import scrapeGetchu from './getchu'
 import scrapeSurugaya from './surugaya'
 import scrapeFanza from './fanza'
+import scrapeDlsite from './dlsite'
 
 export const getNumber = (str: string) => +str.replace(/[^0-9]/g, '');
 export const removeNewLine = (str: string) => str.replace(/\n/g, '')
@@ -111,23 +112,11 @@ export const getFanzaPrice = async (url: URL): Promise<ResultResponse | null> =>
   }
 }
 
-type DlsiteResponse = {
-  price: number
-}
-
 export const getDlsitePrice = async (url: URL): Promise<ResultResponse | null> => {
   try {
     const reqURL = getDlsiteRequestURL(url)
-    const res = await fetch(`${BASE_URL}/dlsite`, {
-      method: "POST",
-      body: JSON.stringify({ url: reqURL })
-    })
-    const text = await res.text()
-    const response = JSON.parse(text) as DlsiteResponse
-    if (!response.price) {
-      return null
-    }
-    return { title: "dlsite", price: response.price, priceURL: url.toString() }
+    const res = await scrapeDlsite(reqURL)
+    return { title: "dlsite", price: res, priceURL: url.toString() }
   } catch (e) {
     console.error(e)
     return null
