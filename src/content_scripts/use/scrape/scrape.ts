@@ -58,7 +58,6 @@ export const getAmazonPrice = async (url: URL): Promise<ResultResponse | null> =
       const title = document.title.slice(0, -1 * SiteNameLength)
       for (let i = 1; i <= response.title.length; i++) {
         const thisDistanse = editONP(response.title.slice(0, i), title)
-        console.log(thisDistanse, response.title.slice(0, i))
         if (max.distanse < thisDistanse) {
           max.length = i
           max.distanse = thisDistanse
