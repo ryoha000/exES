@@ -5,6 +5,11 @@ interface Param {
 export interface IFetchMessageRequest {
   url: string
   params?: Param
+  surugayaForm?: {
+    stage: 'settings' | 'confirm'
+    buildId: string
+    token?: string
+  }
 }
 
 export type IFetchMessageResult = IFetchMessageSuccess | IFetchMessageError

@@ -1,6 +1,7 @@
 import { backgroundFetch } from '../utils'
 import { ResultResponse } from './types'
 import { documentFrom, linkURL, parsePrice, unavailable } from './price'
+import { confirmSofmapAge } from './age-confirmation'
 
 export const sofmapURL = (jan: string) => `https://a.sofmap.com/search_result.aspx?styp=p_bar&keyword=${encodeURIComponent(jan)}`
 
@@ -26,13 +27,14 @@ export const parseSofmap = (body: string, jan: string): ResultResponse[] => {
     if (!best.has(result.title) || result.price! < best.get(result.title)!.price!) best.set(result.title, result)
   }
   if (best.size) return [...best.values()]
-  if (dom.querySelector('.adult_on')) return [unavailable('Sofmap', titleURL, 'サイトで年齢確認後に再読み込み')]
+  if (dom.querySelector('.adult_on')) return [unavailable('Sofmap', titleURL, '取得失敗（サイトで確認）')]
   return [unavailable('Sofmap', titleURL, '在庫・価格を確認できません')]
 }
 
 export default async (jan: string): Promise<ResultResponse[]> => {
   // The normal search page is a shell; the same-origin fragment contains sale prices.
-  const body = await backgroundFetch({ url: 'https://a.sofmap.com/product_list_parts.aspx',
-    params: { styp: 'p_bar', keyword: jan, is_page: 'serch_result', isFirst: 'true' } })
-  return parseSofmap(body, jan)
+  const request = { url: 'https://a.sofmap.com/product_list_parts.aspx',
+    params: { styp: 'p_bar', keyword: jan, is_page: 'serch_result', isFirst: 'true' } }
+  const body = await backgroundFetch(request)
+  return parseSofmap(await confirmSofmapAge(body, sofmapURL(jan), request), jan)
 }

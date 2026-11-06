@@ -41,8 +41,8 @@ test('駿河屋のセール価格とマケプレを別々に拾い定価を使�
 test('駿河屋のセーフサーチで非表示のときは在庫なしと扱わない', () => {
   const [result] = parseSurugaya(fixture('surugaya-filtered.html'), '4560100333874')
   assert.equal(result.price, null)
-  assert.match(result.message, /セーフサーチ/)
-  assert.match(result.priceURL, /safe_search\/config/)
+  assert.match(result.message, /取得失敗/)
+  assert.match(result.priceURL, /search\?/)
 })
 
 test('駿河屋のディスク単品の安値を通常品の価格に混ぜない', () => {
@@ -75,7 +75,7 @@ test('ソフマップの売り切れ価格を表示しない', () => {
   assert.equal(result[0].price, null)
   const used = parseSofmap(fixture('sofmap-used.html'), '4560100333874')
   assert.deepEqual(used.map(r => [r.title, r.price]), [['Sofmap(中古)', 5480]])
-  assert.match(parseSofmap('<p class="adult_on">成人向けを表示する</p>', '1')[0].message, /年齢確認/)
+  assert.match(parseSofmap('<p class="adult_on">成人向けを表示する</p>', '1')[0].message, /取得失敗/)
 })
 
 test('Amazon の現在の価格欄を読み旧セレクターに依存しない', () => {
@@ -96,10 +96,10 @@ test('FANZA の通常価格と割引価格を読みポイントを含めない',
   assert.equal(parseFanza(fixture('fanza-sale.html'), 'https://dlsoft.dmm.co.jp/').price, 8530)
 })
 
-test('年齢確認を価格欠損で隠さず案内する', () => {
+test('自動処理後も年齢確認が残る場合は取得失敗を案内する', () => {
   const result = parseFanza('<title>年齢認証 - FANZA</title>', 'https://dlsoft.dmm.co.jp/')
   assert.equal(result.price, null)
-  assert.match(result.message, /年齢確認/)
+  assert.match(result.message, /取得失敗/)
 })
 
 test('FANZA通販は値引額や参考価格を販売価格として扱わない', () => {

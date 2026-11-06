@@ -1,6 +1,7 @@
 import { backgroundFetch } from '../utils'
 import { ResultResponse } from './types'
 import { documentFrom, linkURL, parsePrice, unavailable } from './price'
+import { confirmSurugayaAge } from './age-confirmation'
 
 export const surugayaURL = (jan: string) => `https://www.suruga-ya.jp/search?search_word=${encodeURIComponent(jan)}&searchbox=1`
 
@@ -28,11 +29,13 @@ export const parseSurugaya = (body: string, jan: string): ResultResponse[] => {
   }
   if (best.size) return [...best.values()]
   const safeSearch = Array.from(dom.querySelectorAll('a[href*="/safe_search/config"]')).find(link => /によって/.test(link.textContent || ''))
-  if (safeSearch) return [unavailable('駿河屋', linkURL(safeSearch, titleURL) || titleURL, 'サイトでセーフサーチ設定後に再読み込み')]
+  if (safeSearch) return [unavailable('駿河屋', titleURL, '取得失敗（サイトで確認）')]
   return [unavailable('駿河屋', titleURL,
     /該当する商品|見つかりません|検索結果は0件|該当件数：0件/.test(dom.body.textContent || '') ? '該当商品なし' : '販売価格を取得できません')]
 }
 
 export default async (jan: string): Promise<ResultResponse[]> => {
-  return parseSurugaya(await backgroundFetch({ url: surugayaURL(jan) }), jan)
+  const url = surugayaURL(jan)
+  const body = await backgroundFetch({ url })
+  return parseSurugaya(await confirmSurugayaAge(body, url), jan)
 }

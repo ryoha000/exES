@@ -88,6 +88,52 @@ test('駿河屋の検索404だけは検索設定の案内を解析するため�
   assert.deepEqual(await fetchPage({ url: 'https://www.suruga-ya.jp/product/detail/missing' }), { type: 'error', body: 'HTTP 404' })
 })
 
+test('駿河屋の確認フォームだけを固定の設定値で送信する', async () => {
+  const fetchMock = mock.method(global, 'fetch', async () => new Response('confirmed'))
+  for (const stage of ['settings', 'confirm']) {
+    const suffix = stage === 'confirm' ? '/confirm' : ''
+    await fetchPage({ url: `https://www.suruga-ya.jp/safe_search/config${suffix}?return_url=%2Fsearch%3Fsearch_word%3D123`,
+      surugayaForm: { stage, buildId: 'form-fixture-id', token: 'fixture-token' } })
+    const options = fetchMock.mock.calls.at(-1).arguments[1]
+    const data = new URLSearchParams(options.body)
+    assert.equal(options.method, 'POST')
+    assert.equal(options.credentials, 'include')
+    assert.equal(data.get('form_id'), stage === 'settings' ? 'safe_search_form' : 'safe_search_confirm_form')
+    assert.equal(data.get('form_build_id'), 'form-fixture-id')
+    assert.equal(data.get('form_token'), 'fixture-token')
+    assert.equal(data.get('expired_date'), '2')
+    assert.equal(data.get('sexualExpression'), stage === 'settings' ? '3' : null)
+    assert.equal(data.get('op'), stage === 'settings' ? '設定する' : 'はい')
+  }
+})
+
+test('任意のサイトやフォームへのPOSTを拒否する', async () => {
+  const fetchMock = mock.method(global, 'fetch', async () => new Response('unexpected'))
+  const form = { stage: 'settings', buildId: 'form-fixture-id' }
+  const validURL = 'https://www.suruga-ya.jp/safe_search/config?return_url=%2Fsearch'
+  const cases = [
+    { url: 'https://www.dmm.co.jp/safe_search/config?return_url=%2Fsearch', surugayaForm: form },
+    { url: 'http://www.suruga-ya.jp/safe_search/config?return_url=%2Fsearch', surugayaForm: form },
+    { url: 'https://www.suruga-ya.jp/order?return_url=%2Fsearch', surugayaForm: form },
+    { url: 'https://www.suruga-ya.jp/safe_search/config?return_url=https://example.com/search', surugayaForm: form },
+    { url: validURL, surugayaForm: { ...form, stage: 'confirm' } },
+    { url: validURL, surugayaForm: { ...form, op: 'other' } },
+    { url: validURL, surugayaForm: { ...form, buildId: '' } },
+    { url: validURL, surugayaForm: { ...form, token: {} } },
+    { url: validURL, surugayaForm: null }
+  ]
+  for (const request of cases) assert.equal((await fetchPage(request)).type, 'error')
+  assert.equal(fetchMock.mock.callCount(), 0)
+})
+
+test('設定送信後の検索0件へのリダイレクトは本文を返す', async () => {
+  const response = new Response('empty search', { status: 404 })
+  Object.defineProperty(response, 'url', { value: 'https://www.suruga-ya.jp/search?search_word=123' })
+  mock.method(global, 'fetch', async () => response)
+  assert.deepEqual(await fetchPage({ url: 'https://www.suruga-ya.jp/safe_search/config/confirm?return_url=%2Fsearch',
+    surugayaForm: { stage: 'confirm', buildId: 'form-fixture-id' } }), { type: 'success', body: 'empty search' })
+})
+
 test('Service Worker に届かない場合も呼び出し元を reject する', async () => {
   global.chrome = { runtime: {
     lastError: { message: 'Could not establish connection' },

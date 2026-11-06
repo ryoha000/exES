@@ -1,8 +1,8 @@
 {
   "name": "exES",
   "manifest_version": 3,
-  "version": "1.1.1",
-  "description": "A chrome extention in ErogameScape. This allow you to overview price in some website.",
+  "version": "1.1.2",
+  "description": "18歳以上の方向け。ErogameScapeの作品ページに通販サイトの価格と過去のキャンペーンを表示します。",
   "icons": {
     "16": "logo16.png",
     "48": "logo48.png",
