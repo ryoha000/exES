@@ -1,8 +1,11 @@
 import path from 'path'
 import CopyWebpackPlugin from 'copy-webpack-plugin'
+import { Configuration } from 'webpack'
 
-const config = () => {
+const config = (): Configuration => {
   return {
+    // MV3 disallows eval-based development bundles.
+    devtool: 'source-map',
     entry: {
       content_scripts: path.join(__dirname, 'src/content_scripts', 'content_scripts.ts'),
       background: path.join(__dirname, 'src/background', 'background.ts')
@@ -10,14 +13,15 @@ const config = () => {
     output: {
       // distディレクトリにcontent_scripts.jsを吐く
       path: path.join(__dirname, 'dist'),
-      filename: '[name].js'
+      filename: '[name].js',
+      clean: true
     },
     module: {
       rules: [
         {
-          test: /.ts$/,
+          test: /\.ts$/,
           use: 'ts-loader',
-          exclude: '/node_modules/'
+          exclude: /node_modules/
         }
       ]
     },

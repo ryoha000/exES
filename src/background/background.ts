@@ -1,33 +1,17 @@
-import axios from 'axios'
-import * as Encoding from 'encoding-japanese'
-import { IFetchMessageRequest, IFetchMessageResult } from '../utils'
+import { fetchPage } from './fetch'
+import { IFetchMessageResult } from '../utils'
 
-// @ts-ignore
+// Register synchronously so Chrome can dispatch messages after restarting the worker.
 chrome.runtime.onMessage.addListener(
-  (req: IFetchMessageRequest, _: () => void, onSuccess: (res: IFetchMessageResult) => void) => {
-    try {
-      console.log(req)
-      axios({
-        method       : 'GET', 
-        url          : req.url, 
-        params       : req.params ? req.params : {},
-        responseType : 'arraybuffer',
-        timeout      : 2000
-      }).then(doc => {
-        const codes = new Uint8Array(doc.data)
-        const encode = Encoding.detect(codes)
-        if (!encode) {
-          console.error("couldn't detect")
-          onSuccess({ type: 'error', body: new Error("couldn't detect") })
-          return true
-        }
-        console.log(`detected ${encode}`)
-        const body = Encoding.convert(codes, { to: "UNICODE", from: encode, type: 'string' })
-        onSuccess({ type: 'success', body: body })
-      }).catch(e => onSuccess({ type: 'error', body: e }))
-    } catch (e) {
-      onSuccess({ type: 'error', body: e })
-    }
+  (request: unknown, sender, sendResponse: (response: IFetchMessageResult) => void) => {
+    if (sender.id !== chrome.runtime.id || !sender.url) return false
+
+    const source = new URL(sender.url)
+    if (!['http:', 'https:'].includes(source.protocol) ||
+        !['erogamescape.dyndns.org', 'erogamescape.org'].includes(source.hostname)) return false
+
+    fetchPage(request).then(sendResponse)
+    // Keep the message channel open until fetch and decoding finish.
     return true
   }
 )

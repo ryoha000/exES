@@ -1,0 +1,15 @@
+<div id="queryplan_main">
+<pre>Sort  (cost=620.26..620.44 rows=71 width=32)<br>
+  Sort Key: campaignlist.start_timestamp DESC<br>
+  -&gt;  Nested Loop  (cost=5.27..618.08 rows=71 width=32)<br>
+        -&gt;  Bitmap Heap Scan on campaign_game  (cost=4.98..267.91 rows=71 width=20)<br>
+              Recheck Cond: (game = 3454)<br>
+              -&gt;  Bitmap Index Scan on campaign_game_game_index  (cost=0.00..4.96 rows=71 width=0)<br>
+                    Index Cond: (game = 3454)<br>
+        -&gt;  Memoize  (cost=0.29..4.99 rows=1 width=20)<br>
+              Cache Key: campaign_game.campaign<br>
+              Cache Mode: logical<br>
+              -&gt;  Index Scan using campaignlist_pkey on campaignlist  (cost=0.28..4.98 rows=1 width=20)<br>
+                    Index Cond: (id = campaign_game.campaign)<br>
+</pre>
+</div><div id="query_result_main"></div>

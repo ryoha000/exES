@@ -1,16 +1,13 @@
+import { ResultResponse } from './use/scrape/types'
 export type Store = (update?: Partial<State> | undefined) => State
 
 interface State {
   priceInfos: PriceInfo[]
   saleInfos: SaleInfo[]
+  saleStatus?: string
 }
 
-export interface PriceInfo {
-  title: string
-  titleURL?: string
-  price: number
-  priceURL?: string
-}
+export type PriceInfo = ResultResponse
 
 export interface SaleInfo {
   content: string

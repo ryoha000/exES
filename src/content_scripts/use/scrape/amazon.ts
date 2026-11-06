@@ -1,19 +1,29 @@
 import { backgroundFetch } from '../utils'
-import { ResultResponse, getNumber, removeNewLine } from './scrape'
+import { ResultResponse } from './types'
+import { documentFrom, parsePrice, unavailable } from './price'
 
-const scrapeAmazon = async (asin: string): Promise<ResultResponse> => {
-  const body = await backgroundFetch({ url: `http://amazon.jp/gp/product/black-curtain-redirect.html?ie=UTF8&redirectUrl=/gp/product/${asin}` })
-  const doms = new DOMParser().parseFromString(body, 'text/html')
-
-  // TODO: id が priceblock_ourprice じゃないことがあるかも？要調査
-  const priceDOM = doms.querySelector("#priceblock_ourprice")
-  const titleDOM = doms.querySelector("#productTitle")
-  if (!priceDOM || !titleDOM) {
-    return { price: 0, title: "" }
+export const parseAmazon = (body: string, asin: string): ResultResponse => {
+  const dom = documentFrom(body)
+  const priceURL = `https://www.amazon.co.jp/dp/${asin}`
+  if (dom.querySelector('#captchacharacters') || /Robot Check/.test(dom.title)) return unavailable('Amazon', priceURL, 'サイトで確認が必要です')
+  const title = dom.querySelector('#productTitle')?.textContent?.trim()
+  if (!title) return unavailable('Amazon', priceURL)
+  const selectors = [
+    '#corePrice_feature_div [data-csa-c-buying-option-type="NEW"] .a-price:not(.a-text-price)',
+    '#corePriceDisplay_desktop_feature_div .priceToPay',
+    '#corePrice_feature_div .a-price:not(.a-text-price)',
+    '#priceblock_dealprice', '#priceblock_ourprice', '#priceblock_saleprice'
+  ]
+  for (const selector of selectors) {
+    const node = dom.querySelector(selector)
+    const price = parsePrice(node?.querySelector('.a-offscreen')?.textContent) ||
+      parsePrice(node?.querySelector('[aria-hidden="true"]')?.textContent) || parsePrice(node?.textContent)
+    if (price) return { title, priceURL, ...price }
   }
-  const price = getNumber(priceDOM.innerHTML)
-  const title = removeNewLine(titleDOM.innerHTML)
-  return { price: price, title: title, priceURL: `http://amazon.jp/gp/product/black-curtain-redirect.html?ie=UTF8&redirectUrl=/gp/product/${asin}` }
+  return unavailable('Amazon', priceURL, '在庫・価格を確認できません')
 }
 
-export default scrapeAmazon
+export default async (asin: string): Promise<ResultResponse> => {
+  if (!/^[A-Z0-9]{10}$/i.test(asin)) throw new Error('Invalid ASIN')
+  return parseAmazon(await backgroundFetch({ url: `https://www.amazon.co.jp/dp/${asin}` }), asin)
+}

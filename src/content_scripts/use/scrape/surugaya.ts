@@ -1,46 +1,38 @@
 import { backgroundFetch } from '../utils'
-import { getNumber, ResultResponse } from './scrape'
+import { ResultResponse } from './types'
+import { documentFrom, linkURL, parsePrice, unavailable } from './price'
 
-const scrapeSurugaya = async (jan: string): Promise<ResultResponse[]> => {
-  try {
-    const body = await backgroundFetch({
-      url: 'https://www.suruga-ya.jp/search',
-      params: { search_word: jan, searchbox: 1, is_marketplace: 0 }}
-    )
-    const doms = new DOMParser().parseFromString(body, 'text/html')
-    let usedDOM = doms.querySelector("#search_result > div > div > div.item_price > p:nth-child(1) > span.text-red > strong")
-    const usedTitleDOM = doms.querySelector("div.item_detail > .title > a")
-    if (!usedDOM) {
-      usedDOM = doms.querySelector("#search_result > div > div:nth-child(1) > div.item_price > p:nth-child(3) > span.text-red > strong")
+export const surugayaURL = (jan: string) => `https://www.suruga-ya.jp/search?search_word=${encodeURIComponent(jan)}&searchbox=1`
+
+export const parseSurugaya = (body: string, jan: string): ResultResponse[] => {
+  const dom = documentFrom(body)
+  const titleURL = surugayaURL(jan)
+  const results: ResultResponse[] = []
+  for (const item of Array.from(dom.querySelectorAll('#search_result .item'))) {
+    if (/[（(]状態[：:]|ジャンク|ディスク単品/.test(item.querySelector('.title')?.textContent || '')) continue
+    const priceBox = item.querySelector('.item_price')
+    const price = parsePrice(priceBox?.querySelector(':scope > p .text-red strong')?.textContent)
+    const priceURL = linkURL(item.querySelector('.item_detail .title a'), titleURL)
+    if (price && priceURL) {
+      const label = /新品/.test(priceBox?.querySelector('.price_normal')?.textContent || '') ? '新品' : '中古'
+      results.push({ title: `駿河屋(${label})`, titleURL, priceURL, ...price })
     }
-  
-    const marketplaceDOM = doms.querySelector("#search_result > div > div > div.item_price > div > p.mgnB5.mgnT5 > span.text-red.fontS15 > strong")
-    const marketplaceTitleDOM = doms.querySelector("#search_result > div > div:nth-child(1) > div.item_price > div > p.mgnL-3 > a")
-  
-    const result: ResultResponse[] = []
-    if (usedDOM && usedTitleDOM) {
-      result.push({
-        price: getNumber(usedDOM.innerHTML),
-        priceURL: (usedTitleDOM as HTMLAnchorElement).href,
-        titleURL: "https://www.suruga-ya.jp/search?category=&search_word=" + jan + "&searchbox=1&is_marketplace=0",
-        title: "駿河屋(中古)"
-      })
-    }
-  
-    if (marketplaceDOM && marketplaceTitleDOM) {
-      result.push({
-        price: getNumber(marketplaceDOM.innerHTML),
-        priceURL: (marketplaceTitleDOM as HTMLAnchorElement).href,
-        titleURL: "https://www.suruga-ya.jp/search?category=&search_word=" + jan + "&searchbox=1&is_marketplace=0",
-        title: "駿河屋(マケプレ)"
-      })
-    }
-  
-    return result
-  } catch (e) {
-    console.error(e)
-    return []
+    const marketPrice = parsePrice(priceBox?.querySelector('.makeplaTit .text-red strong, .mgnB5.mgnT5 .text-red strong')?.textContent)
+    const marketURL = linkURL(priceBox?.querySelector('a[href*="/product/other/"]') || null, titleURL)
+    if (marketPrice && marketURL) results.push({ title: '駿河屋(マケプレ)', titleURL, priceURL: marketURL, ...marketPrice })
   }
+  // Keep the cheapest offer per condition, with its matching link and range.
+  const best = new Map<string, ResultResponse>()
+  for (const result of results) {
+    if (!best.has(result.title) || result.price! < best.get(result.title)!.price!) best.set(result.title, result)
+  }
+  if (best.size) return [...best.values()]
+  const safeSearch = Array.from(dom.querySelectorAll('a[href*="/safe_search/config"]')).find(link => /によって/.test(link.textContent || ''))
+  if (safeSearch) return [unavailable('駿河屋', linkURL(safeSearch, titleURL) || titleURL, 'サイトでセーフサーチ設定後に再読み込み')]
+  return [unavailable('駿河屋', titleURL,
+    /該当する商品|見つかりません|検索結果は0件|該当件数：0件/.test(dom.body.textContent || '') ? '該当商品なし' : '販売価格を取得できません')]
 }
 
-export default scrapeSurugaya
+export default async (jan: string): Promise<ResultResponse[]> => {
+  return parseSurugaya(await backgroundFetch({ url: surugayaURL(jan) }), jan)
+}

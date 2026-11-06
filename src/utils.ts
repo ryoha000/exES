@@ -16,5 +16,5 @@ export interface IFetchMessageSuccess {
 
 export interface IFetchMessageError {
   type: 'error'
-  body: Error
+  body: string
 }

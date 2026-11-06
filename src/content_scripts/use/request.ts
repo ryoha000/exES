@@ -11,9 +11,13 @@ export const getRequestPromises = (store: Store, links: ExternalLinks) => {
   if (links.dlsite) promises.push(updateCallback(store, getDlsitePrice(links.dlsite)))
   if (links.fanza) promises.push(updateCallback(store, getFanzaPrice(links.fanza)))
   promises.push((async () => {
-    const saleInfos = await getPastSaleInfo()
-    const tmp = store()
-    store({ saleInfos: [...tmp.saleInfos, ...saleInfos] })
+    try {
+      const saleInfos = await getPastSaleInfo()
+      store({ saleInfos, saleStatus: saleInfos.length ? undefined : '該当するキャンペーンはありません' })
+    } catch (error) {
+      console.error(error)
+      store({ saleStatus: 'キャンペーン情報の取得に失敗しました' })
+    }
   })())
   return promises
 }

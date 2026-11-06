@@ -1,190 +1,111 @@
-import { editONP } from "../edit_distance"
-import { getASINFromAmazonURL, getDlsiteRequestURL } from "../utils"
+import { getASINFromAmazonURL, getDlsiteIDFromURL, getDlsiteRequestURL, getGetchuIDFromURL, unwrapURL } from '../utils'
 import scrapeAmazon from './amazon'
-import scrapeSofmap from './sofmap'
+import scrapeSofmap, { sofmapURL } from './sofmap'
 import scrapeGetchu from './getchu'
-import scrapeSurugaya from './surugaya'
+import scrapeSurugaya, { surugayaURL } from './surugaya'
 import scrapeFanza from './fanza'
 import scrapeDlsite from './dlsite'
+import { unavailable, withFailure, documentFrom } from './price'
+import { ResultResponse } from './types'
+export type { ResultResponse, JANCodeWithAssociatedPrices } from './types'
 
-export const getNumber = (str: string) => +str.replace(/[^0-9]/g, '');
-export const removeNewLine = (str: string) => str.replace(/\n/g, '')
-
-export interface ResultResponse {
-  title: string
-  price: number
-  titleURL?: string
-  priceURL?: string
-}
-
-export interface JANCodeWithAssociatedPrices {
-  janCode: string
-  getchu: ResultResponse
-}
-
-export const getJANCodeWithAssociatedPrice = async (url: URL): Promise<ResultResponse[] | null> => {
+export const getJANCodeWithAssociatedPrice = async (url: URL): Promise<ResultResponse[]> => {
+  const id = getGetchuIDFromURL(url)
+  if (!id) return [unavailable('Getchu', url.href, '商品IDを取得できません')]
   try {
-    const id = url.searchParams.get("id")
-    if (!id) {
-      console.error("批評空間の仕様が変わりました。@ryoha000 に報告していただければ幸いです。")
-      return null
-    }
-    const janWithGetchu = await scrapeGetchu(id)
-    const responses = await Promise.all([
-      scrapeSurugaya(janWithGetchu.janCode),
-      scrapeSofmap(janWithGetchu.janCode)
+    const { janCode, getchu } = await scrapeGetchu(id)
+    if (!janCode) return [getchu,
+      unavailable('駿河屋', 'https://www.suruga-ya.jp/', 'GetchuのJANコードがありません'),
+      unavailable('Sofmap', 'https://a.sofmap.com/', 'GetchuのJANコードがありません')]
+    const prices = await Promise.all([
+      withFailure('駿河屋', surugayaURL(janCode), () => scrapeSurugaya(janCode)),
+      withFailure('Sofmap', sofmapURL(janCode), () => scrapeSofmap(janCode))
     ])
-    const result: ResultResponse[] = []
-    result.push(janWithGetchu.getchu)
-    result.push(...responses[0])
-    result.push(...responses[1])
-    return result
-  } catch (e) {
-    console.error(e)
-    console.error("Getchu.comの仕様が変わりました。@ryoha000 に報告していただければ幸いです。")
-    return null
+    return [getchu, ...prices.flat()]
+  } catch (error) {
+    console.error(error)
+    return [unavailable('Getchu', url.href, '取得失敗（サイトで確認）'),
+      unavailable('駿河屋', 'https://www.suruga-ya.jp/', 'GetchuのJANコードを取得できません'),
+      unavailable('Sofmap', 'https://a.sofmap.com/', 'GetchuのJANコードを取得できません')]
   }
 }
 
-export const getAmazonPrice = async (url: URL): Promise<ResultResponse | null> => {
-  let tryCount = 0
-  const requestAmazonPrice = async (asin: string): Promise<ResultResponse> => {
-    try {
-      const response = await scrapeAmazon(asin)
-
-      let max = { length: -1, distanse: 0 }
-      // タイトル(通常版)　みたいな表記の時　(通常版)　だけを表示するように
-      const SiteNameLength = " ErogameScape -エロゲー批評空間-".length
-      const title = document.title.slice(0, -1 * SiteNameLength)
-      for (let i = 1; i <= response.title.length; i++) {
-        const thisDistanse = editONP(response.title.slice(0, i), title)
-        if (max.distanse < thisDistanse) {
-          max.length = i
-          max.distanse = thisDistanse
-        }
-      }
-      if (max.length === response.title.length) {
-        return  { ...response, title: `Amazon`}
-      }
-      return { ...response, title: `Amazon(${response.title.slice(max.length)})`}
-    } catch (e) {
-      tryCount++
-      console.error(e)
-      if (tryCount > 5) {
-        throw new Error("over 5 fail")
-      }
-      return await requestAmazonPrice(asin)
-    }
-  }
-
+export const getAmazonPrice = async (url: URL): Promise<ResultResponse[]> => {
   const asin = getASINFromAmazonURL(url)
-  if (asin.length === 0) {
-    return null
-  }
-  try {
-    // サーバーからAmazonに同時にリクエストを送りたくないからわざと直列にしてる
-    return await requestAmazonPrice(asin)
-  } catch (e) {
-    console.error(e)
-    return null
-  }
+  if (!asin) return [unavailable('Amazon', url.href, '商品IDを取得できません')]
+  return withFailure('Amazon', url.href, async () => {
+    const result = await scrapeAmazon(asin)
+    if (result.price === null) return result
+    const gameTitle = document.title.replace(/\s*ErogameScape.*$/, '').trim()
+    const detail = result.title.startsWith(gameTitle) ? result.title.slice(gameTitle.length).trim() : result.title
+    return { ...result, title: detail ? `Amazon（${detail}）` : 'Amazon' }
+  })
 }
 
-export const getFanzaPrice = async (url: URL): Promise<ResultResponse | null> => {
-  try {
-    const redirectURL = url.searchParams.get("lurl")
-    if (!redirectURL) {
-      return null
-    }
-    const response = await scrapeFanza(redirectURL)
-    if (!response.price) {
-      return null
-    }
-    return response
-  } catch (e) {
-    console.error(e)
-    return null
-  }
+export const getFanzaPrice = async (url: URL): Promise<ResultResponse[]> => {
+  const target = unwrapURL(url)
+  return withFailure('FANZA', target.href, () => scrapeFanza(target.href))
 }
 
-export const getDlsitePrice = async (url: URL): Promise<ResultResponse | null> => {
-  try {
-    const reqURL = getDlsiteRequestURL(url)
-    const res = await scrapeDlsite(reqURL)
-    return { title: "dlsite", price: res, priceURL: url.toString() }
-  } catch (e) {
-    console.error(e)
-    return null
-  }
+export const getDlsitePrice = async (url: URL): Promise<ResultResponse[]> => {
+  const target = unwrapURL(url)
+  return withFailure('DLsite', target.href, () => scrapeDlsite(getDlsiteRequestURL(target), getDlsiteIDFromURL(target), target.href))
 }
 
-interface SaleInfo {
-  content: string
-  start: string
-  end: string
+export interface SaleInfo { content: string; start: string; end: string }
+
+export const parseSaleInfo = (body: string): SaleInfo[] => {
+  const dom = documentFrom(body)
+  const result = dom.querySelector('#query_result_main')
+  // A successful zero-row query has a query plan and an empty result container.
+  if (result && result.childElementCount === 0 && !result.textContent?.trim() && dom.querySelector('#queryplan_main pre')) return []
+  const table = result?.querySelector('table')
+  if (!table) throw new Error('キャンペーン情報を取得できません')
+  const rows = Array.from(table.querySelectorAll('tr'))
+  const headers = Array.from(rows[0]?.querySelectorAll('th') || []).map(e => e.textContent?.trim())
+  const contentIndex = headers.indexOf('content')
+  const startIndex = headers.indexOf('start_timestamp')
+  const endIndex = headers.indexOf('end_timestamp')
+  if ([contentIndex, startIndex, endIndex].some(index => index < 0)) throw new Error('キャンペーンの形式を確認できません')
+  return rows.slice(1).flatMap(row => {
+    const cells = row.querySelectorAll('td')
+    const content = cells[contentIndex]?.textContent?.trim() || ''
+    const start = cells[startIndex]?.textContent?.trim() || ''
+    const end = cells[endIndex]?.textContent?.trim() || ''
+    return /^\d{4}-\d{2}-\d{2}/.test(start) && /^\d{4}-\d{2}-\d{2}/.test(end) ? [{ content, start, end }] : []
+  }).sort((a, b) => b.start.localeCompare(a.start))
 }
 
-export const getPastSaleInfo = async () => {
-  try {
-    const formData = new FormData()
-    const id = new URL(location.href).searchParams.get("game")
-    if (!id) return []
-    const query = `SELECT * FROM campaign_game INNER JOIN campaignlist ON campaignlist.id = campaign_game.campaign WHERE game = '${id}';`
-    formData.append("sql", query)
-    const res = await fetch("https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/sql_for_erogamer_form.php", {
-      method: "POST",
-      body: formData
-    })
-    const text = await res.text()
-    const dom = new DOMParser().parseFromString(text, "text/html")
-
-    const saleInfos: SaleInfo[] = []
-    dom.querySelectorAll("#query_result_main tr").forEach((tr, i) => {
-      if (i === 0) {
-        return
-      }
-      const content = tr.querySelector("td:nth-child(4)")
-      const start = tr.querySelector("td:nth-child(10)")
-      const end = tr.querySelector("td:nth-child(11)")
-      if (!content || !start || !end) return
-      saleInfos.push({ content: content.innerHTML, start: start.innerHTML, end: end.innerHTML })
-    })
-    return saleInfos
-  } catch (e) {
-    console.error(e)
-    return []
-  }
+export const getPastSaleInfo = async (): Promise<SaleInfo[]> => {
+  const id = new URL(location.href).searchParams.get('game')
+  if (!id || !/^\d+$/.test(id)) return []
+  const formData = new FormData()
+  formData.append('sql', `SELECT campaign_game.content, campaignlist.start_timestamp, campaignlist.end_timestamp FROM campaign_game INNER JOIN campaignlist ON campaignlist.id = campaign_game.campaign WHERE game = ${id} ORDER BY campaignlist.start_timestamp DESC;`)
+  const response = await fetch(new URL('sql_for_erogamer_form.php', location.href), {
+    method: 'POST', body: formData, signal: AbortSignal.timeout(15000)
+  })
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  return parseSaleInfo(await response.text())
 }
 
-const EXTERNAL_LINKS_ID = "bottom_inter_links_main"
-export interface ExternalLinks {
-  amazon: URL[]
-  getchu?: URL
-  dlsite?: URL
-  fanza?: URL
-}
+export interface ExternalLinks { amazon: URL[]; getchu?: URL; dlsite?: URL; fanza?: URL }
 
-export const getExternalLinks = () => {
-  const linksContainer = document.getElementById(EXTERNAL_LINKS_ID)
-  if (!linksContainer) {
-    throw "批評空間の仕様が変わりました。@ryoha000 に報告していただければ幸いです。"
-  }
-
+export const getExternalLinks = (dom: Document = document): ExternalLinks => {
+  const container = dom.getElementById('bottom_inter_links_main')
+  if (!container) throw new Error('通販リンクを取得できません')
   const links: ExternalLinks = { amazon: [] }
-  linksContainer.querySelectorAll('a').forEach(link => {
-    const url = new URL(link.href)
-    if (link.innerHTML === "Amazon") {
-      links.amazon.push(url)
+  container.querySelectorAll('a').forEach(link => {
+    let url: URL
+    try { url = new URL(link.getAttribute('href') || '', dom.baseURI) } catch { return }
+    if (!/^https?:$/.test(url.protocol)) return
+    const label = link.textContent?.trim()
+    const target = unwrapURL(url)
+    if (label === 'Amazon' || /(^|\.)amazon\.(co\.jp|jp)$/.test(target.hostname)) {
+      if (!links.amazon.some(existing => getASINFromAmazonURL(existing) === getASINFromAmazonURL(url))) links.amazon.push(url)
     }
-    if (link.innerHTML === "Getchu.com") {
-      links.getchu = url
-    }
-    if (link.innerHTML === "DLsite.com") {
-      links.dlsite = url
-    }
-    if (link.innerHTML === "DMM") {
-      links.fanza = url
-    }
+    if (!links.getchu && (label === 'Getchu.com' || /(^|\.)getchu\.com$/.test(target.hostname))) links.getchu = url
+    if (!links.dlsite && (label === 'DLsite.com' || /(^|\.)dlsite\.com$/.test(target.hostname))) links.dlsite = url
+    if (!links.fanza && (label === 'DMM' || label === 'FANZA')) links.fanza = url
   })
   return links
 }

@@ -1,69 +1,38 @@
 import { backgroundFetch } from '../utils'
-import { ResultResponse, getNumber } from './scrape'
+import { ResultResponse } from './types'
+import { documentFrom, linkURL, parsePrice, unavailable } from './price'
 
-const scrapeSofmap = async (jan: string): Promise<ResultResponse[]> => {
-  try {
-    const body = await backgroundFetch({
-      url: 'https://a.sofmap.com/search_result.aspx',
-      params: { product_type: "ALL", styp: "p_bar", keyword: jan, gid: "", aac: "on" }
-    })
-    const doms = new DOMParser().parseFromString(body, 'text/html')
-    const tds = doms.querySelectorAll("#contents_main > form > table:nth-child(3) > tbody > tr > td")
-    if (!tds) {
-      return []
-    }
-  
-    const result = { used: 0, usedURL: "", brandNew: 0, brandNewURL: "" }
-    tds.forEach(td => {
-      const np = td.querySelector(".normal-price")
-      if (np) {
-        const price = getNumber(np.querySelector("span")?.innerHTML ?? "")
-        const imgs = td.querySelectorAll("img")
-        const url = (td.querySelector("span.list-name > a") as HTMLAnchorElement).href
-  
-        let isSoldOut = false
-        let isUsed = false
-        imgs.forEach(img => {
-          if (img.alt === "限定数終了" || img.alt === "完売御礼") {
-            isSoldOut = true
-          }
-          if (img.src === "/images/system_icon/icon_chuko.gif") {
-            isUsed = true
-          }
-        })
-        if (!isSoldOut && price && url) {
-          if (isUsed && (result.used === 0 || result.used > price)) {
-            result.used = price
-            result.usedURL = url
-          } else if (result.brandNew === 0 || result.brandNew > price) {
-            result.brandNew = price
-            result.brandNewURL = url
-          }
-        }
-      }
-    })
-    const res: ResultResponse[] = []
-    if (result.used) {
-      res.push({
-        title: "Sofmap(中古)",
-        titleURL: `https://a.sofmap.com/search_result/exec/?mode=SEARCH&gid=&keyword_and=${jan}&keyword_not=&product_maker=&product_type=NEW&product_type=USED&price_from=&price_to=&order_by=DEFAULT&x=50&y=5&styp=p_kwsk"`,
-        price: result.used,
-        priceURL: result.usedURL
-      })
-    }
-    if (result.brandNew) {
-      res.push({
-        title: "Sofmap(新品)",
-        titleURL: `https://a.sofmap.com/search_result/exec/?mode=SEARCH&gid=&keyword_and=${jan}&keyword_not=&product_maker=&product_type=NEW&product_type=USED&price_from=&price_to=&order_by=DEFAULT&x=50&y=5&styp=p_kwsk`,
-        price: result.brandNew,
-        priceURL: result.brandNewURL
-      })
-    }
-    return res
-  } catch (e) {
-    console.error(e)
-    return []
+export const sofmapURL = (jan: string) => `https://a.sofmap.com/search_result.aspx?styp=p_bar&keyword=${encodeURIComponent(jan)}`
+
+export const parseSofmap = (body: string, jan: string): ResultResponse[] => {
+  const dom = documentFrom(body)
+  const titleURL = sofmapURL(jan)
+  const offers: ResultResponse[] = []
+  for (const main of Array.from(dom.querySelectorAll('.mainbox'))) {
+    const stock = main.querySelector('.stock')?.textContent || ''
+    const soldOut = /完売|販売終了|在庫なし|限定数終了|お取り扱いを終了/.test(stock)
+    const used = !!main.querySelector('.used, .useditem, [class*="used-rank"]') ||
+      /中古/.test(main.querySelector('.item-type')?.textContent || '')
+    const price = parsePrice(main.querySelector('.price')?.textContent)
+    const priceURL = linkURL(main.querySelector('a.product_name'), titleURL)
+    if (!soldOut && price && priceURL) offers.push({ title: used ? 'Sofmap(中古)' : 'Sofmap(新品)', titleURL, priceURL, ...price })
+    const usedBox = main.closest('li')?.querySelector('.used_box')
+    const usedPrice = parsePrice(usedBox?.querySelector('.price-txt')?.textContent)
+    const usedURL = linkURL(usedBox?.querySelector('a') || null, titleURL)
+    if (usedPrice && usedURL) offers.push({ title: 'Sofmap(中古)', titleURL, priceURL: usedURL, ...usedPrice })
   }
+  const best = new Map<string, ResultResponse>()
+  for (const result of offers) {
+    if (!best.has(result.title) || result.price! < best.get(result.title)!.price!) best.set(result.title, result)
+  }
+  if (best.size) return [...best.values()]
+  if (dom.querySelector('.adult_on')) return [unavailable('Sofmap', titleURL, 'サイトで年齢確認後に再読み込み')]
+  return [unavailable('Sofmap', titleURL, '在庫・価格を確認できません')]
 }
 
-export default scrapeSofmap
+export default async (jan: string): Promise<ResultResponse[]> => {
+  // The normal search page is a shell; the same-origin fragment contains sale prices.
+  const body = await backgroundFetch({ url: 'https://a.sofmap.com/product_list_parts.aspx',
+    params: { styp: 'p_bar', keyword: jan, is_page: 'serch_result', isFirst: 'true' } })
+  return parseSofmap(body, jan)
+}

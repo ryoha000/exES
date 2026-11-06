@@ -7,9 +7,9 @@ import { getExternalLinks } from './use/scrape/scrape'
 import { getRequestPromises } from './use/request';
 import { convertPriceInfosToRowInfos, convertSaleInfosToRowInfos } from './use/utils';
 
-const InitialStore = { priceInfos: [], saleInfos: [] }
+const InitialStore = { priceInfos: [], saleInfos: [], saleStatus: '取得中…' }
 
-window.addEventListener('load', async () => {
+const initialize = async () => {
   try {
     const links = getExternalLinks()
     const renderApp = createApp()
@@ -18,9 +18,9 @@ window.addEventListener('load', async () => {
     const promises = getRequestPromises(store, links)
     await Promise.all(promises)
   } catch (e) {
-    // console.log(e)
+    console.error(e)
   }
-})
+}
 
 const App = () => {
   const styles = {
@@ -31,7 +31,7 @@ const App = () => {
   return html`
     <div style="${styleMap(styles)}">
       ${Item("各通販サイトの価格", ["サイト", "価格"], convertPriceInfosToRowInfos(store().priceInfos), 2)}
-      ${Item("過去のキャンペーン", ["期間", "内容"], convertSaleInfosToRowInfos(store().saleInfos))}
+      ${Item("過去のキャンペーン", ["期間", "内容"], store().saleStatus ? [[{ text: store().saleStatus || '' }]] : convertSaleInfosToRowInfos(store().saleInfos))}
     </div>
   `
 }
@@ -53,8 +53,16 @@ const insertElement = () => {
   }
 
   const container = document.createElement('div')
+  container.id = 'exes-prices'
   beforeElement.parentNode?.insertBefore(container, beforeElement.nextElementSibling)
   return container
 }
 
 let store: Store = createStore(InitialStore, () => {})
+
+// document_idle can run after the load event has already fired.
+if (document.readyState === 'complete') {
+  void initialize()
+} else {
+  window.addEventListener('load', initialize, { once: true })
+}
